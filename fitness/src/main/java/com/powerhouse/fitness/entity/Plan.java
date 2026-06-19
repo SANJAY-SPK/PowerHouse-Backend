@@ -27,6 +27,10 @@ public class Plan {
     private boolean active = true;
 
     public enum PlanType {
-        MONTHLY, QUARTERLY, ANNUAL
+        MONTHLY,
+        QUARTERLY,
+        HALF_YEARLY,
+        YEARLY,
+        LIFETIME
     }
 }

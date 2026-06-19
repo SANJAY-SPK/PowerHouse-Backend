@@ -20,16 +20,19 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final MemberRepository memberRepository;
 
+    @Transactional(readOnly = true)
     public List<PaymentResponse> getAllPayments() {
         return paymentRepository.findAll()
                 .stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<PaymentResponse> getPaymentsByMember(Long memberId) {
         return paymentRepository.findByMemberId(memberId)
                 .stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<PaymentResponse> getDuePayments() {
         return paymentRepository.findByStatus(Payment.PaymentStatus.DUE)
                 .stream().map(this::toResponse).toList();
@@ -46,12 +49,17 @@ public class PaymentService {
                 .date(LocalDate.now())
                 .planName(request.getPlanName() != null
                         ? request.getPlanName()
-                        : member.getPlan().getName())
-                .status(Payment.PaymentStatus.PAID)
+                        : (member.getPlan() != null ? member.getPlan().getName() : null))
+                .status(request.getStatus() != null && request.getStatus().equalsIgnoreCase("DUE")
+                        ? Payment.PaymentStatus.DUE
+                        : Payment.PaymentStatus.PAID)
                 .mode(request.getMode() != null
                         ? Payment.PaymentMode.valueOf(request.getMode().toUpperCase())
-                        : Payment.PaymentMode.CASH)
+                        : (request.getStatus() != null && request.getStatus().equalsIgnoreCase("DUE")
+                            ? null
+                            : Payment.PaymentMode.CASH))
                 .build();
+
 
         return toResponse(paymentRepository.save(payment));
     }

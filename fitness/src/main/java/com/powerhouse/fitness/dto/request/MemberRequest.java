@@ -17,5 +17,7 @@ public class MemberRequest {
     @NotNull private Long planId;
     @NotNull private LocalDate planStartDate;
     private double paymentAmount;
-    private String paymentMode; // CASH, UPI, CARD
+    private String paymentMode;   // CASH, UPI, CARD
+    private String paymentStatus; // PAID (default) | DUE
+    private String status;        // for direct status override (PAUSED, ACTIVE etc)
 }

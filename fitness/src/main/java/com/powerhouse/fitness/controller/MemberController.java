@@ -48,6 +48,21 @@ public class MemberController {
         return ResponseEntity.ok(memberService.renewPlan(id, request));
     }
 
+    /** Lightweight status patch — only changes the status field.
+     *  Body: { "status": "PAUSED" | "ACTIVE" | "EXPIRED" }
+     *  e.g. PATCH /api/members/5/status
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<MemberResponse> patchStatus(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        String status = body.get("status");
+        if (status == null || status.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(memberService.patchStatus(id, status.toUpperCase()));
+    }
+
     @PostMapping("/{id}/checkin")
     public ResponseEntity<MemberResponse> checkIn(@PathVariable Long id) {
         return ResponseEntity.ok(memberService.checkIn(id));

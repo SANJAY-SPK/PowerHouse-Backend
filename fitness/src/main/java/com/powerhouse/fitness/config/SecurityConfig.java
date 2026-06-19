@@ -39,19 +39,18 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api-docs/**",
-                                "/actuator/health"
-                        ).permitAll()
+                                "/actuator/health",
+                                "/error")
+                        .permitAll()
                         // Admin only
-                        .requestMatchers("/api/members/**").hasRole("ADMIN")
-                        .requestMatchers("/api/plans/**").hasAnyRole("ADMIN", "MEMBER")
-                        .requestMatchers("/api/payments/**").hasRole("ADMIN")
-                        .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
+                        .requestMatchers("/api/members", "/api/members/**").hasRole("ADMIN")
+                        .requestMatchers("/api/plans", "/api/plans/**").hasRole("ADMIN")
+                        .requestMatchers("/api/payments", "/api/payments/**").hasRole("ADMIN")
+                        .requestMatchers("/api/dashboard", "/api/dashboard/**").hasRole("ADMIN")
+                        .requestMatchers("/api/revenue", "/api/revenue/**").hasRole("ADMIN")
                         // All other requests need auth
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        .anyRequest().authenticated())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

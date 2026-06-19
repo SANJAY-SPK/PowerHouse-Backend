@@ -8,5 +8,6 @@ public class PaymentRequest {
     @NotNull private Long memberId;
     @NotNull private double amount;
     private String planName;
-    private String mode; // CASH, UPI, CARD
-}
+    private String mode;   // CASH, UPI, CARD
+    private String status; // PAID (default) | DUE
+}

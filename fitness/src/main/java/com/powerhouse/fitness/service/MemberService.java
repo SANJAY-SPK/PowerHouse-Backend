@@ -28,6 +28,7 @@ public class MemberService {
     private final PaymentRepository paymentRepository;
     private final AttendanceRepository attendanceRepository;
 
+    @Transactional(readOnly = true)
     public List<MemberResponse> getAllMembers() {
         return memberRepository.findAll()
                 .stream()
@@ -35,12 +36,14 @@ public class MemberService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public MemberResponse getMemberById(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Member not found: " + id));
         return toResponse(member);
     }
 
+    @Transactional(readOnly = true)
     public List<MemberResponse> getMembersByStatus(String status) {
         MemberStatus memberStatus = MemberStatus.valueOf(status.toUpperCase());
         return memberRepository.findByStatus(memberStatus)
@@ -74,17 +77,20 @@ public class MemberService {
 
         Member saved = memberRepository.save(member);
 
-        // Record initial payment
-        if (request.getPaymentAmount() > 0) {
+        // Record initial payment — record for both PAID and DUE
+        boolean isDue = "DUE".equalsIgnoreCase(request.getPaymentStatus());
+        if (request.getPaymentAmount() > 0 || isDue) {
+            double amount = request.getPaymentAmount() > 0
+                    ? request.getPaymentAmount() : plan.getPrice();
             Payment payment = Payment.builder()
                     .member(saved)
-                    .amount(request.getPaymentAmount())
+                    .amount(amount)
                     .date(LocalDate.now())
                     .planName(plan.getName())
-                    .status(Payment.PaymentStatus.PAID)
-                    .mode(request.getPaymentMode() != null
+                    .status(isDue ? Payment.PaymentStatus.DUE : Payment.PaymentStatus.PAID)
+                    .mode(!isDue && request.getPaymentMode() != null
                             ? Payment.PaymentMode.valueOf(request.getPaymentMode().toUpperCase())
-                            : Payment.PaymentMode.CASH)
+                            : (!isDue ? Payment.PaymentMode.CASH : null))
                     .build();
             paymentRepository.save(payment);
         }
@@ -136,17 +142,20 @@ public class MemberService {
 
         memberRepository.save(member);
 
-        // Record renewal payment
-        if (request.getPaymentAmount() > 0) {
+        // Record renewal payment — record for both PAID and DUE
+        boolean isDue = "DUE".equalsIgnoreCase(request.getPaymentStatus());
+        if (request.getPaymentAmount() > 0 || isDue) {
+            double amount = request.getPaymentAmount() > 0
+                    ? request.getPaymentAmount() : plan.getPrice();
             Payment payment = Payment.builder()
                     .member(member)
-                    .amount(request.getPaymentAmount())
+                    .amount(amount)
                     .date(LocalDate.now())
                     .planName(plan.getName())
-                    .status(Payment.PaymentStatus.PAID)
-                    .mode(request.getPaymentMode() != null
+                    .status(isDue ? Payment.PaymentStatus.DUE : Payment.PaymentStatus.PAID)
+                    .mode(!isDue && request.getPaymentMode() != null
                             ? Payment.PaymentMode.valueOf(request.getPaymentMode().toUpperCase())
-                            : Payment.PaymentMode.CASH)
+                            : (!isDue ? Payment.PaymentMode.CASH : null))
                     .build();
             paymentRepository.save(payment);
         }
@@ -192,6 +201,19 @@ public class MemberService {
         }
         memberRepository.saveAll(all);
     }
+
+    @Transactional
+    public MemberResponse patchStatus(Long id, String status) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Member not found: " + id));
+        try {
+            member.setStatus(MemberStatus.valueOf(status.toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status: " + status);
+        }
+        return toResponse(memberRepository.save(member));
+    }
+
 
     private MemberStatus resolveStatus(LocalDate endDate) {
         if (endDate == null) return MemberStatus.ACTIVE;

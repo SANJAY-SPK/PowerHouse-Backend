@@ -40,14 +40,10 @@ public class AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
-        Role role = request.getRole() != null
-                ? Role.valueOf(request.getRole().toUpperCase())
-                : Role.MEMBER;
-
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(role)
+                .role(Role.ADMIN)
                 .build();
         userRepository.save(user);
         String token = jwtService.generateToken(user);
